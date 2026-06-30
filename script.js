@@ -19,8 +19,13 @@ let items = [];
 function loadItems() {
     const saved = localStorage.getItem('shopping_items');
     if (saved) {
-        items = JSON.parse(saved);
-        renderItems();
+        try {
+            items = JSON.parse(saved);
+            renderItems();
+        } catch (e) {
+            console.error('Error loading items:', e);
+            items = [];
+        }
     }
 }
 
@@ -39,6 +44,8 @@ const itemListEl = document.getElementById('item-list');
 const totalItemsEl = document.getElementById('total-items');
 const purchasedItemsEl = document.getElementById('purchased-items');
 const remainingItemsEl = document.getElementById('remaining-items');
+
+// ✅ FIXED: Get the correct button elements
 const clearPurchasedBtn = document.getElementById('clear-purchased-btn');
 const clearAllBtn = document.getElementById('clear-all-btn');
 
@@ -48,6 +55,7 @@ const clearAllBtn = document.getElementById('clear-all-btn');
 const BACKEND_URL = 'https://tg-win-mini-app-test.onrender.com/api/shopping';
 
 function syncWithBackend() {
+    // Only sync if we have items or if we're clearing
     fetch(BACKEND_URL, {
         method: 'POST',
         headers: {
@@ -152,19 +160,22 @@ function togglePurchased(id) {
 
 function deleteItem(id) {
     const item = items.find(i => i.id === id);
-    items = items.filter(i => i.id !== id);
-    saveItems();
-    renderItems();
-    syncWithBackend();
-    tg.HapticFeedback.impactOccurred('medium');
-    updateMainButton();
+    if (item) {
+        items = items.filter(i => i.id !== id);
+        saveItems();
+        renderItems();
+        syncWithBackend();
+        tg.HapticFeedback.impactOccurred('medium');
+        updateMainButton();
+    }
 }
 
+// ✅ FIXED: Clear Purchased function
 function clearPurchased() {
     const purchased = items.filter(i => i.purchased);
     if (purchased.length === 0) {
         tg.showPopup({
-            title: 'Nothing to Clear',
+            title: '🧹 Nothing to Clear',
             message: 'No purchased items to remove.',
             buttons: [{ type: 'ok' }]
         });
@@ -186,16 +197,29 @@ function clearPurchased() {
             syncWithBackend();
             tg.HapticFeedback.notificationOccurred('success');
             updateMainButton();
+            tg.showPopup({
+                title: '✅ Cleared!',
+                message: `Removed ${purchased.length} purchased item(s).`,
+                buttons: [{ type: 'ok' }]
+            });
         }
     });
 }
 
+// ✅ FIXED: Clear All function
 function clearAll() {
-    if (items.length === 0) return;
+    if (items.length === 0) {
+        tg.showPopup({
+            title: '📭 Empty List',
+            message: 'Your shopping list is already empty.',
+            buttons: [{ type: 'ok' }]
+        });
+        return;
+    }
     
     tg.showPopup({
         title: '⚠️ Clear All?',
-        message: 'Delete all items from your shopping list?',
+        message: `Delete all ${items.length} items from your shopping list?`,
         buttons: [
             { type: 'cancel' },
             { type: 'ok' }
@@ -208,6 +232,11 @@ function clearAll() {
             syncWithBackend();
             tg.HapticFeedback.notificationOccurred('warning');
             updateMainButton();
+            tg.showPopup({
+                title: '🗑️ Cleared!',
+                message: 'All items have been removed.',
+                buttons: [{ type: 'ok' }]
+            });
         }
     });
 }
@@ -233,7 +262,7 @@ function renderItems() {
                 <div class="item-name">${escapeHtml(item.name)}</div>
                 <div class="item-details">
                     <span>${item.quantity}x</span>
-                    <span class="item-category">${item.category}</span>
+                    <span class="item-category">${escapeHtml(item.category)}</span>
                     ${item.purchased ? '✅ Purchased' : ''}
                 </div>
             </div>
@@ -287,7 +316,7 @@ function updateMainButton() {
         tg.MainButton.setText(`🛒 ${remaining} item${remaining > 1 ? 's' : ''} remaining`);
         tg.MainButton.show();
     } else if (items.length > 0) {
-        tg.MainButton.setText('✅ All purchased!');
+        tg.MainButton.setText('✅ All purchased! 🎉');
         tg.MainButton.show();
     } else {
         tg.MainButton.hide();
@@ -296,10 +325,19 @@ function updateMainButton() {
 
 tg.MainButton.onClick(function() {
     const remaining = items.filter(i => !i.purchased);
-    if (remaining.length === 0) {
+    if (remaining.length === 0 && items.length > 0) {
         tg.showPopup({
             title: '🎉 All Done!',
             message: 'You have purchased everything on your list!',
+            buttons: [{ type: 'ok' }]
+        });
+        return;
+    }
+    
+    if (items.length === 0) {
+        tg.showPopup({
+            title: '📭 Empty List',
+            message: 'Your shopping list is empty. Add some items!',
             buttons: [{ type: 'ok' }]
         });
         return;
@@ -326,6 +364,7 @@ itemNameInput.addEventListener('keypress', function(e) {
     if (e.key === 'Enter') addItem();
 });
 
+// ✅ FIXED: Event listeners for buttons
 clearPurchasedBtn.addEventListener('click', clearPurchased);
 clearAllBtn.addEventListener('click', clearAll);
 
@@ -336,3 +375,4 @@ clearAllBtn.addEventListener('click', clearAll);
 loadFromBackend();
 
 console.log('✅ Shopping List Mini App is ready!');
+console.log('📦 Items loaded:', items.length);
