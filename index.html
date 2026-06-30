@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛒 Shopping List</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>🛒 Shopping List</h1>
+            <p id="user-greeting">Hello!</p>
+        </header>
+
+        <!-- Add Item Form -->
+        <div class="card">
+            <h2>Add Item</h2>
+            <div class="form-group">
+                <input type="text" id="item-name" placeholder="What do you need to buy?" maxlength="100">
+                <div class="row">
+                    <input type="number" id="item-quantity" placeholder="Qty" min="1" value="1">
+                    <select id="item-category">
+                        <option value="Groceries">🛒 Groceries</option>
+                        <option value="Electronics">📱 Electronics</option>
+                        <option value="Clothing">👕 Clothing</option>
+                        <option value="Home">🏠 Home</option>
+                        <option value="Other">📦 Other</option>
+                    </select>
+                </div>
+                <button id="add-item-btn" class="btn-primary">Add to List</button>
+            </div>
+        </div>
+
+        <!-- Shopping List -->
+        <div class="card">
+            <h2>Your Shopping List</h2>
+            <div id="item-list">
+                <p class="empty-message">No items yet. Start adding!</p>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="card summary-card">
+            <div class="summary-row">
+                <span>Total Items:</span>
+                <span id="total-items">0</span>
+            </div>
+            <div class="summary-row">
+                <span>Purchased:</span>
+                <span id="purchased-items">0</span>
+            </div>
+            <div class="summary-row">
+                <span>Remaining:</span>
+                <span id="remaining-items">0</span>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="action-buttons">
+            <button id="clear-purchased-btn" class="btn-secondary">Clear Purchased</button>
+            <button id="clear-all-btn" class="btn-danger">Clear All</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
