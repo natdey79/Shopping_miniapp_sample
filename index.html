@@ -9,17 +9,15 @@
 </head>
 <body>
     <div id="app">
-        <!-- Header -->
         <header>
             <h1>🛒 Shopping List</h1>
             <p id="user-greeting">Hello!</p>
         </header>
 
-        <!-- Add Item Form -->
         <div class="card">
             <h2>Add Item</h2>
             <div class="form-group">
-                <input type="text" id="item-name" placeholder="What do you need to buy?" maxlength="100">
+                <input type="text" id="item-name" placeholder="What do you need to buy?">
                 <div class="row">
                     <input type="number" id="item-quantity" placeholder="Qty" min="1" value="1">
                     <select id="item-category">
@@ -30,11 +28,10 @@
                         <option value="Other">📦 Other</option>
                     </select>
                 </div>
-                <button id="add-item-btn" class="btn-primary">Add to List</button>
+                <button id="add-item-btn" class="btn-primary">➕ Add to List</button>
             </div>
         </div>
 
-        <!-- Shopping List -->
         <div class="card">
             <h2>Your Shopping List</h2>
             <div id="item-list">
@@ -42,7 +39,6 @@
             </div>
         </div>
 
-        <!-- Summary -->
         <div class="card summary-card">
             <div class="summary-row">
                 <span>Total Items:</span>
@@ -58,10 +54,9 @@
             </div>
         </div>
 
-        <!-- Actions -->
         <div class="action-buttons">
-            <button id="clear-purchased-btn" class="btn-secondary">Clear Purchased</button>
-            <button id="clear-all-btn" class="btn-danger">Clear All</button>
+            <button id="clear-purchased-btn" class="btn-secondary">🧹 Clear Purchased</button>
+            <button id="clear-all-btn" class="btn-danger">🗑️ Clear All</button>
         </div>
     </div>
     <script src="script.js"></script>
