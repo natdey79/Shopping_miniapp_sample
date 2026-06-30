@@ -1,25 +1,23 @@
+// ============================================================
+// SHOPPING LIST MINI APP - FULL WORKING VERSION
+// ============================================================
+
 console.log('🛒 Shopping List App Loading...');
 
-// ============================================================
 // 1. INITIALIZE TELEGRAM
-// ============================================================
 const tg = window.Telegram.WebApp;
 tg.expand();
 tg.ready();
 
-// Show user name
 const user = tg.initDataUnsafe?.user;
 if (user) {
     document.getElementById('user-greeting').textContent = 
         `Welcome, ${user.first_name}! 👋`;
 }
 
-// ============================================================
 // 2. DATA
-// ============================================================
 let items = [];
 
-// Load from localStorage
 function loadItems() {
     try {
         const saved = localStorage.getItem('shopping_items');
@@ -34,7 +32,6 @@ function loadItems() {
     renderItems();
 }
 
-// Save to localStorage
 function saveItems() {
     try {
         localStorage.setItem('shopping_items', JSON.stringify(items));
@@ -44,33 +41,25 @@ function saveItems() {
     }
 }
 
-// ============================================================
-// 3. GET ELEMENTS (with error checking)
-// ============================================================
-function getElement(id) {
-    const el = document.getElementById(id);
-    if (!el) {
-        console.error('❌ Element not found:', id);
-    }
-    return el;
-}
+// 3. GET ELEMENTS
+const itemName = document.getElementById('item-name');
+const itemQty = document.getElementById('item-quantity');
+const itemCategory = document.getElementById('item-category');
+const addBtn = document.getElementById('add-item-btn');
+const itemList = document.getElementById('item-list');
+const totalEl = document.getElementById('total-items');
+const purchasedEl = document.getElementById('purchased-items');
+const remainingEl = document.getElementById('remaining-items');
+const clearPurchasedBtn = document.getElementById('clear-purchased-btn');
+const clearAllBtn = document.getElementById('clear-all-btn');
 
-const itemName = getElement('item-name');
-const itemQty = getElement('item-quantity');
-const itemCategory = getElement('item-category');
-const addBtn = getElement('add-item-btn');
-const itemList = getElement('item-list');
-const totalEl = getElement('total-items');
-const purchasedEl = getElement('purchased-items');
-const remainingEl = getElement('remaining-items');
-const clearPurchasedBtn = getElement('clear-purchased-btn');
-const clearAllBtn = getElement('clear-all-btn');
+console.log('Elements found:', {
+    addBtn: !!addBtn,
+    clearPurchasedBtn: !!clearPurchasedBtn,
+    clearAllBtn: !!clearAllBtn
+});
 
-// ============================================================
-// 4. CORE FUNCTIONS (Simple & Tested)
-// ============================================================
-
-// Add item
+// 4. CORE FUNCTIONS
 function addItem() {
     console.log('➕ Add button clicked');
     
@@ -108,7 +97,6 @@ function addItem() {
     console.log('✅ Item added:', newItem);
 }
 
-// Toggle purchased
 function togglePurchased(id) {
     console.log('🔄 Toggle item:', id);
     const item = items.find(i => i.id === id);
@@ -121,7 +109,6 @@ function togglePurchased(id) {
     }
 }
 
-// Delete item
 function deleteItem(id) {
     console.log('🗑️ Delete item:', id);
     items = items.filter(i => i.id !== id);
@@ -131,7 +118,6 @@ function deleteItem(id) {
     updateMainButton();
 }
 
-// Clear purchased
 function clearPurchased() {
     console.log('🧹 Clear Purchased clicked');
     const purchased = items.filter(i => i.purchased);
@@ -161,7 +147,6 @@ function clearPurchased() {
     });
 }
 
-// Clear all
 function clearAll() {
     console.log('🗑️ Clear All clicked');
     
@@ -190,9 +175,7 @@ function clearAll() {
     });
 }
 
-// ============================================================
 // 5. RENDER
-// ============================================================
 function renderItems() {
     console.log('🔄 Rendering items:', items.length);
     
@@ -228,7 +211,6 @@ function renderItems() {
         </div>
     `).join('');
     
-    // Attach event listeners
     document.querySelectorAll('.toggle-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             togglePurchased(parseInt(this.dataset.id));
@@ -260,9 +242,7 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// ============================================================
 // 6. TELEGRAM MAIN BUTTON
-// ============================================================
 function updateMainButton() {
     const remaining = items.filter(i => !i.purchased).length;
     if (remaining > 0) {
@@ -304,59 +284,31 @@ tg.MainButton.onClick(function() {
     });
 });
 
-// ============================================================
-// 7. ATTACH EVENT LISTENERS (with console logs)
-// ============================================================
-
+// 7. ATTACH EVENT LISTENERS
 if (addBtn) {
-    addBtn.addEventListener('click', function(e) {
-        console.log('🔘 Add button clicked via event listener');
-        addItem();
-    });
+    addBtn.addEventListener('click', addItem);
     console.log('✅ Add button attached');
-} else {
-    console.error('❌ Add button not found!');
+}
+
+if (itemName) {
+    itemName.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') addItem();
+    });
 }
 
 if (clearPurchasedBtn) {
-    clearPurchasedBtn.addEventListener('click', function(e) {
-        console.log('🔘 Clear Purchased button clicked');
-        clearPurchased();
-    });
+    clearPurchasedBtn.addEventListener('click', clearPurchased);
     console.log('✅ Clear Purchased button attached');
-} else {
-    console.error('❌ Clear Purchased button not found!');
 }
 
 if (clearAllBtn) {
-    clearAllBtn.addEventListener('click', function(e) {
-        console.log('🔘 Clear All button clicked');
-        clearAll();
-    });
+    clearAllBtn.addEventListener('click', clearAll);
     console.log('✅ Clear All button attached');
-} else {
-    console.error('❌ Clear All button not found!');
 }
 
-// Enter key on name field
-if (itemName) {
-    itemName.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            console.log('⌨️ Enter key pressed');
-            addItem();
-        }
-    });
-}
-
-// ============================================================
 // 8. START APP
-// ============================================================
 loadItems();
 updateMainButton();
 
 console.log('✅ Shopping List App is ready!');
 console.log('📊 Items loaded:', items.length);
-console.log('📌 Check your buttons:');
-console.log('   - Add button:', addBtn ? '✅ Found' : '❌ Missing');
-console.log('   - Clear Purchased:', clearPurchasedBtn ? '✅ Found' : '❌ Missing');
-console.log('   - Clear All:', clearAllBtn ? '✅ Found' : '❌ Missing');
