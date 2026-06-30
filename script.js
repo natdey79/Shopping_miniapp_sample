@@ -1,10 +1,13 @@
+console.log('🛒 Shopping List App Loading...');
+
 // ============================================================
-// 1. INITIALIZE TELEGRAM WEB APP
+// 1. INITIALIZE TELEGRAM
 // ============================================================
 const tg = window.Telegram.WebApp;
 tg.expand();
 tg.ready();
 
+// Show user name
 const user = tg.initDataUnsafe?.user;
 if (user) {
     document.getElementById('user-greeting').textContent = 
@@ -12,167 +15,127 @@ if (user) {
 }
 
 // ============================================================
-// 2. APP STATE
+// 2. DATA
 // ============================================================
 let items = [];
 
+// Load from localStorage
 function loadItems() {
-    const saved = localStorage.getItem('shopping_items');
-    if (saved) {
-        try {
+    try {
+        const saved = localStorage.getItem('shopping_items');
+        if (saved) {
             items = JSON.parse(saved);
-            renderItems();
-        } catch (e) {
-            console.error('Error loading items:', e);
-            items = [];
+            console.log('📦 Loaded items:', items.length);
         }
+    } catch (e) {
+        console.error('Error loading:', e);
+        items = [];
+    }
+    renderItems();
+}
+
+// Save to localStorage
+function saveItems() {
+    try {
+        localStorage.setItem('shopping_items', JSON.stringify(items));
+        console.log('💾 Saved items:', items.length);
+    } catch (e) {
+        console.error('Error saving:', e);
     }
 }
 
-function saveItems() {
-    localStorage.setItem('shopping_items', JSON.stringify(items));
+// ============================================================
+// 3. GET ELEMENTS (with error checking)
+// ============================================================
+function getElement(id) {
+    const el = document.getElementById(id);
+    if (!el) {
+        console.error('❌ Element not found:', id);
+    }
+    return el;
 }
 
-// ============================================================
-// 3. DOM ELEMENTS
-// ============================================================
-const itemNameInput = document.getElementById('item-name');
-const itemQuantityInput = document.getElementById('item-quantity');
-const itemCategorySelect = document.getElementById('item-category');
-const addItemBtn = document.getElementById('add-item-btn');
-const itemListEl = document.getElementById('item-list');
-const totalItemsEl = document.getElementById('total-items');
-const purchasedItemsEl = document.getElementById('purchased-items');
-const remainingItemsEl = document.getElementById('remaining-items');
-
-// ✅ FIXED: Get the correct button elements
-const clearPurchasedBtn = document.getElementById('clear-purchased-btn');
-const clearAllBtn = document.getElementById('clear-all-btn');
+const itemName = getElement('item-name');
+const itemQty = getElement('item-quantity');
+const itemCategory = getElement('item-category');
+const addBtn = getElement('add-item-btn');
+const itemList = getElement('item-list');
+const totalEl = getElement('total-items');
+const purchasedEl = getElement('purchased-items');
+const remainingEl = getElement('remaining-items');
+const clearPurchasedBtn = getElement('clear-purchased-btn');
+const clearAllBtn = getElement('clear-all-btn');
 
 // ============================================================
-// 4. BACKEND CONNECTION
-// ============================================================
-const BACKEND_URL = 'https://tg-win-mini-app-test.onrender.com/api/shopping';
-
-function syncWithBackend() {
-    // Only sync if we have items or if we're clearing
-    fetch(BACKEND_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            items: items,
-            initData: tg.initData
-        })
-    })
-    .then(response => {
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        return response.json();
-    })
-    .then(data => {
-        console.log('✅ Shopping list synced with backend:', data);
-    })
-    .catch(error => {
-        console.error('❌ Error syncing shopping list:', error);
-    });
-}
-
-function loadFromBackend() {
-    fetch(`${BACKEND_URL}?initData=${encodeURIComponent(tg.initData)}`)
-    .then(response => {
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        return response.json();
-    })
-    .then(data => {
-        if (data.success && data.items && data.items.length > 0) {
-            items = data.items;
-            saveItems();
-            renderItems();
-            updateMainButton();
-            console.log('✅ Shopping list loaded from backend');
-        } else {
-            loadItems();
-        }
-    })
-    .catch(error => {
-        console.error('❌ Error loading shopping list:', error);
-        loadItems();
-    });
-}
-
-// ============================================================
-// 5. CORE FUNCTIONS
+// 4. CORE FUNCTIONS (Simple & Tested)
 // ============================================================
 
+// Add item
 function addItem() {
-    const name = itemNameInput.value.trim();
-    const quantity = parseInt(itemQuantityInput.value) || 1;
-    const category = itemCategorySelect.value;
+    console.log('➕ Add button clicked');
+    
+    const name = itemName.value.trim();
+    const quantity = parseInt(itemQty.value) || 1;
+    const category = itemCategory.value;
     
     if (!name) {
         tg.showPopup({
-            title: 'Missing Info',
+            title: '⚠️ Missing Info',
             message: 'Please enter an item name.',
             buttons: [{ type: 'ok' }]
         });
         return;
     }
     
-    const item = {
+    const newItem = {
         id: Date.now(),
         name: name,
         quantity: quantity,
         category: category,
-        purchased: false,
-        createdAt: new Date().toISOString()
+        purchased: false
     };
     
-    items.push(item);
+    items.push(newItem);
     saveItems();
     renderItems();
-    syncWithBackend();
     
-    itemNameInput.value = '';
-    itemQuantityInput.value = '1';
+    itemName.value = '';
+    itemQty.value = '1';
     
     tg.HapticFeedback.notificationOccurred('success');
-    tg.showPopup({
-        title: '✅ Item Added!',
-        message: `${quantity}x ${name} added to your shopping list.`,
-        buttons: [{ type: 'ok' }]
-    });
-    
     updateMainButton();
+    
+    console.log('✅ Item added:', newItem);
 }
 
+// Toggle purchased
 function togglePurchased(id) {
+    console.log('🔄 Toggle item:', id);
     const item = items.find(i => i.id === id);
     if (item) {
         item.purchased = !item.purchased;
         saveItems();
         renderItems();
-        syncWithBackend();
         tg.HapticFeedback.impactOccurred('light');
         updateMainButton();
     }
 }
 
+// Delete item
 function deleteItem(id) {
-    const item = items.find(i => i.id === id);
-    if (item) {
-        items = items.filter(i => i.id !== id);
-        saveItems();
-        renderItems();
-        syncWithBackend();
-        tg.HapticFeedback.impactOccurred('medium');
-        updateMainButton();
-    }
+    console.log('🗑️ Delete item:', id);
+    items = items.filter(i => i.id !== id);
+    saveItems();
+    renderItems();
+    tg.HapticFeedback.impactOccurred('medium');
+    updateMainButton();
 }
 
-// ✅ FIXED: Clear Purchased function
+// Clear purchased
 function clearPurchased() {
+    console.log('🧹 Clear Purchased clicked');
     const purchased = items.filter(i => i.purchased);
+    
     if (purchased.length === 0) {
         tg.showPopup({
             title: '🧹 Nothing to Clear',
@@ -185,29 +148,23 @@ function clearPurchased() {
     tg.showPopup({
         title: '🧹 Clear Purchased?',
         message: `Remove ${purchased.length} purchased item(s)?`,
-        buttons: [
-            { type: 'cancel' },
-            { type: 'ok' }
-        ]
+        buttons: [{ type: 'cancel' }, { type: 'ok' }]
     }, function(buttonIndex) {
         if (buttonIndex === 1) {
             items = items.filter(i => !i.purchased);
             saveItems();
             renderItems();
-            syncWithBackend();
             tg.HapticFeedback.notificationOccurred('success');
             updateMainButton();
-            tg.showPopup({
-                title: '✅ Cleared!',
-                message: `Removed ${purchased.length} purchased item(s).`,
-                buttons: [{ type: 'ok' }]
-            });
+            console.log('✅ Cleared purchased items');
         }
     });
 }
 
-// ✅ FIXED: Clear All function
+// Clear all
 function clearAll() {
+    console.log('🗑️ Clear All clicked');
+    
     if (items.length === 0) {
         tg.showPopup({
             title: '📭 Empty List',
@@ -219,44 +176,40 @@ function clearAll() {
     
     tg.showPopup({
         title: '⚠️ Clear All?',
-        message: `Delete all ${items.length} items from your shopping list?`,
-        buttons: [
-            { type: 'cancel' },
-            { type: 'ok' }
-        ]
+        message: `Delete all ${items.length} items?`,
+        buttons: [{ type: 'cancel' }, { type: 'ok' }]
     }, function(buttonIndex) {
         if (buttonIndex === 1) {
             items = [];
             saveItems();
             renderItems();
-            syncWithBackend();
             tg.HapticFeedback.notificationOccurred('warning');
             updateMainButton();
-            tg.showPopup({
-                title: '🗑️ Cleared!',
-                message: 'All items have been removed.',
-                buttons: [{ type: 'ok' }]
-            });
+            console.log('✅ Cleared all items');
         }
     });
 }
 
+// ============================================================
+// 5. RENDER
+// ============================================================
 function renderItems() {
+    console.log('🔄 Rendering items:', items.length);
+    
     if (items.length === 0) {
-        itemListEl.innerHTML = `<p class="empty-message">No items yet. Start adding!</p>`;
+        itemList.innerHTML = `<p class="empty-message">No items yet. Start adding!</p>`;
         updateSummary();
         return;
     }
     
     const sorted = [...items].sort((a, b) => {
-        // Sort by purchased status first, then by name
         if (a.purchased !== b.purchased) {
             return a.purchased ? 1 : -1;
         }
         return a.name.localeCompare(b.name);
     });
     
-    itemListEl.innerHTML = sorted.map(item => `
+    itemList.innerHTML = sorted.map(item => `
         <div class="item-card ${item.purchased ? 'purchased' : ''}">
             <div class="item-info">
                 <div class="item-name">${escapeHtml(item.name)}</div>
@@ -275,6 +228,7 @@ function renderItems() {
         </div>
     `).join('');
     
+    // Attach event listeners
     document.querySelectorAll('.toggle-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             togglePurchased(parseInt(this.dataset.id));
@@ -295,9 +249,9 @@ function updateSummary() {
     const purchased = items.filter(i => i.purchased).length;
     const remaining = total - purchased;
     
-    totalItemsEl.textContent = total;
-    purchasedItemsEl.textContent = purchased;
-    remainingItemsEl.textContent = remaining;
+    if (totalEl) totalEl.textContent = total;
+    if (purchasedEl) purchasedEl.textContent = purchased;
+    if (remainingEl) remainingEl.textContent = remaining;
 }
 
 function escapeHtml(text) {
@@ -309,7 +263,6 @@ function escapeHtml(text) {
 // ============================================================
 // 6. TELEGRAM MAIN BUTTON
 // ============================================================
-
 function updateMainButton() {
     const remaining = items.filter(i => !i.purchased).length;
     if (remaining > 0) {
@@ -333,46 +286,77 @@ tg.MainButton.onClick(function() {
         });
         return;
     }
-    
     if (items.length === 0) {
         tg.showPopup({
             title: '📭 Empty List',
-            message: 'Your shopping list is empty. Add some items!',
+            message: 'Your shopping list is empty.',
             buttons: [{ type: 'ok' }]
         });
         return;
     }
-    
-    const itemList = remaining.map((i, idx) => 
+    const list = remaining.map((i, idx) => 
         `${idx+1}. ${i.quantity}x ${i.name}`
     ).join('\n');
-    
     tg.showPopup({
         title: `🛒 Remaining (${remaining.length})`,
-        message: itemList,
+        message: list,
         buttons: [{ type: 'close' }]
     });
 });
 
 // ============================================================
-// 7. EVENT LISTENERS
+// 7. ATTACH EVENT LISTENERS (with console logs)
 // ============================================================
 
-addItemBtn.addEventListener('click', addItem);
+if (addBtn) {
+    addBtn.addEventListener('click', function(e) {
+        console.log('🔘 Add button clicked via event listener');
+        addItem();
+    });
+    console.log('✅ Add button attached');
+} else {
+    console.error('❌ Add button not found!');
+}
 
-itemNameInput.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') addItem();
-});
+if (clearPurchasedBtn) {
+    clearPurchasedBtn.addEventListener('click', function(e) {
+        console.log('🔘 Clear Purchased button clicked');
+        clearPurchased();
+    });
+    console.log('✅ Clear Purchased button attached');
+} else {
+    console.error('❌ Clear Purchased button not found!');
+}
 
-// ✅ FIXED: Event listeners for buttons
-clearPurchasedBtn.addEventListener('click', clearPurchased);
-clearAllBtn.addEventListener('click', clearAll);
+if (clearAllBtn) {
+    clearAllBtn.addEventListener('click', function(e) {
+        console.log('🔘 Clear All button clicked');
+        clearAll();
+    });
+    console.log('✅ Clear All button attached');
+} else {
+    console.error('❌ Clear All button not found!');
+}
+
+// Enter key on name field
+if (itemName) {
+    itemName.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            console.log('⌨️ Enter key pressed');
+            addItem();
+        }
+    });
+}
 
 // ============================================================
-// 8. LOAD INITIAL DATA
+// 8. START APP
 // ============================================================
+loadItems();
+updateMainButton();
 
-loadFromBackend();
-
-console.log('✅ Shopping List Mini App is ready!');
-console.log('📦 Items loaded:', items.length);
+console.log('✅ Shopping List App is ready!');
+console.log('📊 Items loaded:', items.length);
+console.log('📌 Check your buttons:');
+console.log('   - Add button:', addBtn ? '✅ Found' : '❌ Missing');
+console.log('   - Clear Purchased:', clearPurchasedBtn ? '✅ Found' : '❌ Missing');
+console.log('   - Clear All:', clearAllBtn ? '✅ Found' : '❌ Missing');
