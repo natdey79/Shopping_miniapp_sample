@@ -219,7 +219,6 @@ input[type="number"] {
     color: #ff4444;
 }
 
-/* Summary Card */
 .summary-card {
     background: var(--tg-theme-button-color, #0088cc);
     color: var(--tg-theme-button-text-color, #ffffff);
@@ -243,7 +242,6 @@ input[type="number"] {
     flex-wrap: wrap;
 }
 
-/* Responsive */
 @media (max-width: 480px) {
     .row {
         flex-direction: column;
